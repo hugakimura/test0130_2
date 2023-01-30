@@ -1,0 +1,68 @@
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, Float
+
+import pandas as pd
+
+import config
+
+user = config.DB_USER
+password = config.PASSWORD
+host = config.HOST
+db_name = config.DATABASE
+
+# engineの設定
+engine = create_engine(f'mysql+mysqlconnector://{user}:{password}@{host}/{db_name}')
+
+# セッションの作成
+db_session = scoped_session(
+  sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+  )
+)
+
+# テーブルを作成する
+Base = declarative_base()
+Base.query  = db_session.query_property()
+
+# テーブルを定義する
+# Baseを継承
+class Wine(Base):
+  """ワインの情報をもつCSVファイルのクラス
+
+  Args:
+      Base (_type_): DeclarativeBase
+  """
+  # テーブル名
+  __tablename__ = 'wines2'
+  # カラムの定義
+  id = Column(Integer, primary_key=True, autoincrement=True)
+  wine_class = Column(Integer, unique=False)
+  alcohol = Column(Float, unique=False)
+  
+  def __init__(self, wine_class=None, alcohol=None):
+    self.wine_class = wine_class
+    self.alcohol = alcohol
+
+
+Base.metadata.create_all(bind=engine)
+
+def read_data():
+  """CSVファイルを読み込み、DBにデータを追加する関数
+  """
+  wine_df = pd.read_csv('./data/wine_class.csv')
+
+  for index, _df in wine_df.iterrows():
+    row = Wine(wine_class=_df['Class'], alcohol=_df['Alcohol'])
+    # DBにあるWineのデータを全件取得
+    db = db_session.query(Wine).all()
+    for row in db:
+  # カラムを指定してデータを取得する
+     print(row.alcohol)
+
+  db_session.commit()
+
+read_data()
