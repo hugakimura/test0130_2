@@ -5,6 +5,7 @@ from sqlalchemy import Column, Integer, Float
 
 import pandas as pd
 
+
 import config
 
 user = config.DB_USER
